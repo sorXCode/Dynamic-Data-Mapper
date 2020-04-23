@@ -1,5 +1,6 @@
 from flask import Flask, request
 from flask_restful import reqparse, abort, Api, Resource
+from database import create_table, update_table, read_table
 
 
 app = Flask(__name__)
@@ -7,7 +8,7 @@ api = Api(app)
 
 
 # def abort_if_providerId_doesnt_exist(providerId):
-    
+
 #     if providerId not in providerIds:
 #         abort(404, message="providerId {} doesn't exist".format(providerId))
 
@@ -21,8 +22,9 @@ class DataCreator(Resource):
     def post(self):
         args = self.parser.parse_args()
         print(args)
-        providerId = args["providerId"]
+        providerId = str(args["providerId"])
         fields = args['fields']
+        create_table(table_name=providerId, columns=fields)
         return args, 201
 
 
@@ -34,14 +36,22 @@ class DataLoader(Resource):
     def post(self):
         args = self.parser.parse_args()
         print(args)
-        providerId = args["providerId"]
+        providerId = str(args["providerId"])
         data = args['data']
-        return args, 201
+        for data_row in data:
+            status = update_table(table_name=providerId, data=data_row)
+        if status==None:
+            return args, 201
+        else:
+            return "ERROR IN POST DATA", 211
 
 
 class DataRetriever(Resource):
-    def get(self, providerId):
-        return providerId
+
+    def get(self, providerId, *args, **kwargs):
+        # r = list(request.args.items())
+        # print(r)
+        return read_table(table_name=str(providerId))
 
 
 api.add_resource(DataCreator, '/create', endpoint='create')
