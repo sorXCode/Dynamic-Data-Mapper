@@ -81,7 +81,7 @@ def read_table(table_name, filter_spec=False):
 
         if filter_spec:
             try:
-                session_query = apply_filters(s, filter_spec)
+                session_query = apply_filters(session_query, filter_spec)
             except FieldNotFound:
                 return "INVALID FILTER"
         
