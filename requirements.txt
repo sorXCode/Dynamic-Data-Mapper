@@ -1,2 +1,3 @@
 flask==1.1.2
 flask-restful==0.3.8
+sqlalchemy-filters==0.10.0

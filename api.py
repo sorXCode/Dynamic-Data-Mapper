@@ -6,13 +6,6 @@ from database import create_table, update_table, read_table
 app = Flask(__name__)
 api = Api(app)
 
-
-# def abort_if_providerId_doesnt_exist(providerId):
-
-#     if providerId not in providerIds:
-#         abort(404, message="providerId {} doesn't exist".format(providerId))
-
-
 # DataCreation
 class DataCreator(Resource):
     parser = reqparse.RequestParser()
@@ -35,12 +28,11 @@ class DataLoader(Resource):
 
     def post(self):
         args = self.parser.parse_args()
-        print(args)
         providerId = str(args["providerId"])
         data = args['data']
-        for data_row in data:
-            status = update_table(table_name=providerId, data=data_row)
-        if status==None:
+
+        status = update_table(table_name=providerId, data=data)
+        if status == None:
             return args, 201
         else:
             return "ERROR IN POST DATA", 211
@@ -49,8 +41,24 @@ class DataLoader(Resource):
 class DataRetriever(Resource):
 
     def get(self, providerId, *args, **kwargs):
-        # r = list(request.args.items())
-        # print(r)
+        queries = list(request.args.items())
+        if len(queries) > 0:
+            operators = {
+                'eqc': 'ilike',
+                'eq': '==',
+                'lt': '<',
+                'gt': '>'
+            }
+            spec = list()
+            for query in queries:
+                spec.append(dict())
+                operator = operators.get(query[1].split(':')[0])
+                spec[-1]['field'] = query[0]
+                spec[-1]['op'] = operator
+                spec[-1]['value'] = f"%{query[1].split(':')[1]}%" if operator == 'ilike' else query[1].split(':')[
+                    1]
+
+            return read_table(table_name=str(providerId), filter_spec=spec)
         return read_table(table_name=str(providerId))
 
 
