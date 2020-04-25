@@ -1,23 +1,27 @@
 from flask import Flask, request
-from flask_restful import reqparse, abort, Api, Resource
-from database import create_table, update_table, read_table
+from flask_restful import Api, Resource, reqparse
+
+from database import create_table, read_table, update_table
+
+APP = Flask(__name__)
+API = Api(APP)
 
 
-app = Flask(__name__)
-api = Api(app)
-
-# DataCreation
 class DataCreator(Resource):
+    """
+    Data Schema Creator
+    """
     parser = reqparse.RequestParser()
     parser.add_argument('providerId', required=True, type=int)
-    parser.add_argument('fields', required=True, action='append')
+    parser.add_argument('fields', required=True, type=dict)
 
     def post(self):
         args = self.parser.parse_args()
-        print(args)
-        providerId = str(args["providerId"])
+        provider_id = str(args["providerId"])
         fields = args['fields']
-        create_table(table_name=providerId, columns=fields)
+        status = create_table(table_name=provider_id, columns=fields)
+        if status != "success":
+            return status, 210
         return args, 201
 
 
@@ -27,46 +31,57 @@ class DataLoader(Resource):
     parser.add_argument('data', required=True, type=dict, action='append')
 
     def post(self):
+        """
+        Populates table with data
+        """
         args = self.parser.parse_args()
-        providerId = str(args["providerId"])
+        provider_id = str(args["providerId"])
         data = args['data']
 
-        status = update_table(table_name=providerId, data=data)
-        if status == None:
-            return args, 201
-        else:
-            return "ERROR IN POST DATA", 211
+        status = update_table(table_name=provider_id, data=data)
+        if status != "success":
+            return status, 211
+        return args, 201
 
 
 class DataRetriever(Resource):
 
-    def get(self, providerId, *args, **kwargs):
+    @staticmethod
+    def construct_query_specification(queries):
+        if len(queries) == 0:
+            return None
+
+        operators = {
+            'eqc': 'ilike',
+            'eq': '==',
+            'lt': '<',
+            'gt': '>'
+        }
+        spec = list()
+        for query in queries:
+            spec.append(dict())
+            operator = operators.get(query[1].split(':')[0])
+            spec[-1]['field'] = query[0]
+            spec[-1]['op'] = operator
+            spec[-1]['value'] = f"%{query[1].split(':')[1]}%" if operator == 'ilike' \
+                else query[1].split(':')[1]
+        return spec
+
+    def get(self, provider_id):
+        """
+        Retrieves data from database table
+        """
         queries = list(request.args.items())
-        if len(queries) > 0:
-            operators = {
-                'eqc': 'ilike',
-                'eq': '==',
-                'lt': '<',
-                'gt': '>'
-            }
-            spec = list()
-            for query in queries:
-                spec.append(dict())
-                operator = operators.get(query[1].split(':')[0])
-                spec[-1]['field'] = query[0]
-                spec[-1]['op'] = operator
-                spec[-1]['value'] = f"%{query[1].split(':')[1]}%" if operator == 'ilike' else query[1].split(':')[
-                    1]
-
-            return read_table(table_name=str(providerId), filter_spec=spec)
-        return read_table(table_name=str(providerId))
+        spec = self.construct_query_specification(queries)
+        return read_table(table_name=str(provider_id), filter_spec=spec)
 
 
-api.add_resource(DataCreator, '/create', endpoint='create')
-api.add_resource(DataLoader, '/load', endpoint='load')
-api.add_resource(DataRetriever, '/filter/<int:providerId>',
+API.add_resource(DataCreator, '/create', endpoint='create')
+API.add_resource(DataLoader, '/load', endpoint='load')
+API.add_resource(DataRetriever, '/filter/<int:provider_id>',
                  endpoint='retrieve')
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    # APP.run(debug=False)
+    APP.run(debug=True)
