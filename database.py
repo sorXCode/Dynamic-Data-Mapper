@@ -63,8 +63,6 @@ def read_table(table_name, filter_spec=None):
     args:   table_name: str,
             filter: list_of_dict or json
     """
-    # with ENGINE.connect() as con:
-    #     table = MetaData(bind=con, reflect=True).tables.get(table_name)
     table = get_table(table_name)
     if table is None:
         return "TABLE '{}' NOT FOUND".format(table_name)

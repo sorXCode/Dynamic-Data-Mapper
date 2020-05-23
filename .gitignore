@@ -1,2 +1,5 @@
 venv/*
 .vscode
+*.pdf
+__pycache__
+*.py[ca]

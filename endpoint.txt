@@ -1,0 +1,26 @@
+
+Service Endpoint:
+https://sorxcode.pythonanywhere.com
+
+The endpoints are created as specified.
+
+To create data specification:
+endpoint: /create
+method: POST 
+
+To load provider data:
+endpoint: /load
+method: POST
+
+To get provider data
+endpoint: /filter/{providerId}
+method: GET
+
+To filter provider data
+endpoint: /filter/{providerId}?field=condition:value
+method: GET
+
+TEST data URL:
+
+https://sorxcode.pythonanywhere.com/filter/12345?name=eqc:chukwu&age=eq:20&timestamp=gt:1587614029
+
